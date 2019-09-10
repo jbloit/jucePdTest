@@ -3,17 +3,32 @@
 <JUCERPROJECT id="pEj9KG" name="jucePdTest" projectType="guiapp" jucerVersion="5.4.4">
   <MAINGROUP id="STBHJK" name="jucePdTest">
     <GROUP id="{062F1F12-417D-34C4-1517-8D9A3A231A0B}" name="Source">
+      <FILE id="WJW6fS" name="z_queued.h" compile="0" resource="0" file="Source/z_queued.h"/>
+      <FILE id="Bvc12f" name="z_queued.c" compile="1" resource="0" file="Source/z_queued.c"/>
+      <FILE id="EM5xZf" name="z_print_util.h" compile="0" resource="0" file="Source/z_print_util.h"/>
+      <FILE id="EOWA8Z" name="z_print_util.c" compile="1" resource="0" file="Source/z_print_util.c"/>
+      <FILE id="A6h8Dv" name="PdTypes.hpp" compile="0" resource="0" file="Source/PdTypes.hpp"/>
+      <FILE id="itnIgj" name="PdTypes.cpp" compile="1" resource="0" file="Source/PdTypes.cpp"/>
+      <FILE id="kXf1CH" name="PdReceiver.hpp" compile="0" resource="0" file="Source/PdReceiver.hpp"/>
+      <FILE id="Md6Qz0" name="PdMidiReceiver.hpp" compile="0" resource="0"
+            file="Source/PdMidiReceiver.hpp"/>
+      <FILE id="LlZ0Cv" name="PdBase.hpp" compile="0" resource="0" file="Source/PdBase.hpp"/>
+      <FILE id="AEPPy5" name="PdBase.cpp" compile="1" resource="0" file="Source/PdBase.cpp"/>
       <FILE id="k3o9pG" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="mjhRoY" name="ringbuffer.c" compile="1" resource="0" file="Source/ringbuffer.c"/>
+      <FILE id="CAMYkZ" name="ringbuffer.h" compile="0" resource="0" file="Source/ringbuffer.h"/>
       <FILE id="DcpZG0" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <FILE id="jG7m3S" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" microphonePermissionNeeded="1">
+    <XCODE_MAC targetFolder="Builds/MacOSX" microphonePermissionNeeded="1" externalLibraries="pd-osx">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug"/>
-        <CONFIGURATION isDebug="0" name="Release"/>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../libpd/pure-data/src&#10;../../libpd/libpd_wrapper&#10;../../libpd/libpd_wrapper/util"
+                       libraryPath="../../libpd/" osxArchitecture="64BitUniversal"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../libpd/pure-data/src&#10;../../libpd/libpd_wrapper&#10;../../libpd/libpd_wrapper/util"
+                       libraryPath="../../libpd/" osxArchitecture="64BitUniversal"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../../LIBS/JUCE/modules"/>
