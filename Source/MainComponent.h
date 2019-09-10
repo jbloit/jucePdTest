@@ -9,6 +9,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "PdBase.hpp"
 
 //==============================================================================
 /*
@@ -31,10 +32,31 @@ public:
     void paint (Graphics& g) override;
     void resized() override;
 
+    //==============================================================================
+    // Patch loading
+    void reloadPatch(double sampleRate);
+    void setPatchFile(File file);
+    File getPatchFile();
+    String status = "Select a pure data patch file...";
+    bool patchLoadError = false;
+    
 private:
     //==============================================================================
     // Your private member variables go here...
     Random random;
+    
+    int numOutputs = 2;
+    int numInputs = 2;
+    
+    ScopedPointer<pd::PdBase> pd;
+    int pos;
+    
+    AudioPlayHead::CurrentPositionInfo positionInfo;
+    File patchfile;
+    
+    pd::Patch patch;
+    HeapBlock<float> pdInBuffer, pdOutBuffer;
+    double cachedSampleRate;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

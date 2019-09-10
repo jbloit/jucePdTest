@@ -26,8 +26,22 @@ MainComponent::MainComponent()
     {
         // Specify the number of input and output channels that we want to open
 //        setAudioChannels (2, 2);
-        setAudioChannels (0, 2); // no inputs, two outputs
+        setAudioChannels (numInputs, numOutputs); // no inputs, two outputs
     }
+    
+    
+    patchfile = File::getSpecialLocation(File::currentApplicationFile).getChildFile("Contents/Resources/main.pd");
+    
+    String message;
+    message << "setting pure data file with size " << newLine;
+    message << File::getCurrentWorkingDirectory().getFullPathName() << newLine;
+    message << File::getSpecialLocation(File::currentApplicationFile).getChildFile("Contents/Resources/main.pd").getFullPathName() << newLine;
+    message << patchfile.getSize() << newLine;
+
+    Logger::getCurrentLogger()->writeToLog (message);
+    setPatchFile(patchfile);
+    reloadPatch(NULL);
+    Logger::getCurrentLogger()->writeToLog (status);
 }
 
 MainComponent::~MainComponent()
@@ -52,7 +66,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     message << " samplesPerBlockExpected = " << samplesPerBlockExpected << newLine;
     message << " sampleRate = " << sampleRate;
     Logger::getCurrentLogger()->writeToLog (message);
-
+    
     
 }
 
@@ -60,13 +74,42 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 {
     // Your audio-processing code goes here!
 
-    for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel ){
-        auto* buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+    
+    int len = bufferToFill.numSamples;
+    int idx = 0;
+    while (len > 0)
+    {
+        int max = jmin (len, pd->blockSize());
+
+//        /* interleave audio */
+//        {
+//            float* dstBuffer = pdInBuffer.getData();
+//            for (int i = 0; i < max; ++i)
+//            {
+//                for (int channelIndex = 0; channelIndex < numChannels; ++channelIndex)
+//                    *dstBuffer++ = buffer.getReadPointer(channelIndex) [idx + i];
+//            }
+//        }
         
-        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample){
-            buffer[sample] = random.nextFloat() * 0.25f - 0.125f;
+        pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
+        
+        /* write-back */
+        
+    
+        {
+            const float* srcBuffer = pdOutBuffer.getData();
+            for (int i = 0; i < max; ++i)
+            {
+                for (int channelIndex = 0; channelIndex < bufferToFill.buffer->getNumChannels(); ++channelIndex)
+                     bufferToFill.buffer->getWritePointer(channelIndex) [idx + i] = *srcBuffer++;
+            }
         }
+        
+        idx += max;
+        len -= max;
     }
+
+    
 }
 
 void MainComponent::releaseResources()
@@ -94,3 +137,66 @@ void MainComponent::resized()
     // If you add any child components, this is where you should
     // update their positions.
 }
+
+
+//==============================================================================
+// loading patch
+void MainComponent::reloadPatch (double sampleRate)
+{
+    if (sampleRate) {
+        cachedSampleRate = sampleRate;
+    } else {
+        sampleRate = cachedSampleRate;
+    }
+    
+    if (pd) {
+        pd->computeAudio(false);
+        pd->closePatch(patch);
+    }
+    
+    pd = new pd::PdBase;
+    pd->init (numInputs, numOutputs, sampleRate);
+    
+    int numChannels = jmin (numInputs, numOutputs);
+    pdInBuffer.calloc (pd->blockSize() * numChannels);
+    pdOutBuffer.calloc (pd->blockSize() * numChannels);
+    
+
+    if (!patchfile.exists()) {
+        if (patchfile.getFullPathName().toStdString() != "") {
+            status = "File does not exist";
+        }
+        // else keeps select patch message
+        return;
+    }
+    
+    if (patchfile.isDirectory()) {
+        status = "You selected a directory";
+        return;
+    }
+    
+    patch = pd->openPatch (patchfile.getFileName().toStdString(), patchfile.getParentDirectory().getFullPathName().toStdString());
+    
+    if (patch.isValid()) {
+        pd->computeAudio (true);
+        if(!patchLoadError) {
+            status = "Patch loaded successfully";
+        }
+        patchLoadError = false;
+    } else {
+        status = "Selected patch is not valid";
+    }
+}
+
+void MainComponent::setPatchFile(File file)
+{
+    patchfile = file;
+}
+
+File MainComponent::getPatchFile()
+{
+    return patchfile;
+}
+
+
+

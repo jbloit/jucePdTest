@@ -20,6 +20,7 @@
       <FILE id="DcpZG0" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <FILE id="jG7m3S" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="S65B19" name="main.pd" compile="0" resource="1" file="Source/main.pd"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
