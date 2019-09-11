@@ -24,7 +24,8 @@
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" microphonePermissionNeeded="1" externalLibraries="pd-osx">
+    <XCODE_MAC targetFolder="Builds/MacOSX" microphonePermissionNeeded="1" externalLibraries="pd-osx"
+               customPList="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&#10;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;&#10;&lt;plist version=&quot;1.0&quot;&gt;&#10;&lt;dict&gt;&#10;&#9;&lt;key&gt;LSUIElement&lt;/key&gt;&#10;&#9;&lt;true/&gt;&#10;&lt;/dict&gt;&#10;&lt;/plist&gt;">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../libpd/pure-data/src&#10;../../libpd/libpd_wrapper&#10;../../libpd/libpd_wrapper/util"
                        libraryPath="../../libpd/" osxArchitecture="64BitUniversal"/>
