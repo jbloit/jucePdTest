@@ -1,10 +1,10 @@
 /*
-  ==============================================================================
-
-    This file was auto-generated!
-
-  ==============================================================================
-*/
+ ==============================================================================
+ 
+ This file was auto-generated!
+ 
+ ==============================================================================
+ */
 
 #include "MainComponent.h"
 
@@ -14,7 +14,7 @@ MainComponent::MainComponent()
     // Make sure you set the size of the component after
     // you add any child components.
     setSize (800, 600);
-
+    
     // Some platforms require permissions to open input channels so request that here
     if (RuntimePermissions::isRequired (RuntimePermissions::recordAudio)
         && ! RuntimePermissions::isGranted (RuntimePermissions::recordAudio))
@@ -30,14 +30,24 @@ MainComponent::MainComponent()
     }
     
     
-    patchfile = File::getSpecialLocation(File::currentApplicationFile).getChildFile("Contents/Resources/main.pd");
+    patchfile = File::getSpecialLocation(File::currentApplicationFile).getChildFile("main.pd");
     
     String message;
     message << "setting pure data file with size " << newLine;
     message << File::getCurrentWorkingDirectory().getFullPathName() << newLine;
-    message << File::getSpecialLocation(File::currentApplicationFile).getChildFile("Contents/Resources/main.pd").getFullPathName() << newLine;
+    message << File::getSpecialLocation(File::currentApplicationFile).getChildFile("main.pd").getFullPathName() << newLine;
     message << patchfile.getSize() << newLine;
-
+    
+    
+#if JUCE_IOS
+    Array<File> results;
+    File::getSpecialLocation( File::SpecialLocationType::currentApplicationFile).findChildFiles(results, File::findFilesAndDirectories, true);
+    for( auto& result : results )
+    {
+        DBG( "result: " << result.getFullPathName() );
+    }
+#endif
+    
     Logger::getCurrentLogger()->writeToLog (message);
     setPatchFile(patchfile);
     reloadPatch(NULL);
@@ -55,12 +65,12 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 {
     // This function will be called when the audio device is started, or when
     // its settings (i.e. sample rate, block size, etc) are changed.
-
+    
     // You can use this function to initialise any resources you might need,
     // but be careful - it will be called on the audio thread, not the GUI thread.
-
+    
     // For more details, see the help for AudioProcessor::prepareToPlay()
-
+    
     String message;
     message << "Preparing to play audio..." << newLine;
     message << " samplesPerBlockExpected = " << samplesPerBlockExpected << newLine;
@@ -73,42 +83,34 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {
     // Your audio-processing code goes here!
-
     
-    int len = bufferToFill.numSamples;
-    int idx = 0;
-    while (len > 0)
-    {
-        int max = jmin (len, pd->blockSize());
-
-//        /* interleave audio */
-//        {
-//            float* dstBuffer = pdInBuffer.getData();
-//            for (int i = 0; i < max; ++i)
-//            {
-//                for (int channelIndex = 0; channelIndex < numChannels; ++channelIndex)
-//                    *dstBuffer++ = buffer.getReadPointer(channelIndex) [idx + i];
-//            }
-//        }
+    if (isPdComputingAudio) {
         
-        pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
-        
-        /* write-back */
-        
-    
+        int len = bufferToFill.numSamples;
+        int idx = 0;
+        while (len > 0)
         {
-            const float* srcBuffer = pdOutBuffer.getData();
-            for (int i = 0; i < max; ++i)
+            int max = jmin (len, pd->blockSize());
+                        
+            pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
+            
+            /* write-back */
+            
             {
-                for (int channelIndex = 0; channelIndex < bufferToFill.buffer->getNumChannels(); ++channelIndex)
-                     bufferToFill.buffer->getWritePointer(channelIndex) [idx + i] = *srcBuffer++;
+                const float* srcBuffer = pdOutBuffer.getData();
+                for (int i = 0; i < max; ++i)
+                {
+                    for (int channelIndex = 0; channelIndex < bufferToFill.buffer->getNumChannels(); ++channelIndex)
+                        bufferToFill.buffer->getWritePointer(channelIndex) [idx + i] = *srcBuffer++;
+                }
             }
+            
+            idx += max;
+            len -= max;
         }
-        
-        idx += max;
-        len -= max;
+    } else {
+        bufferToFill.clearActiveBufferRegion();
     }
-
     
 }
 
@@ -116,10 +118,10 @@ void MainComponent::releaseResources()
 {
     // This will be called when the audio device stops, or when it is being
     // restarted due to a setting change.
-
+    
     // For more details, see the help for AudioProcessor::releaseResources()
     
-     Logger::getCurrentLogger()->writeToLog ("Releasing audio resources");
+    Logger::getCurrentLogger()->writeToLog ("Releasing audio resources");
 }
 
 //==============================================================================
@@ -127,7 +129,7 @@ void MainComponent::paint (Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
-
+    
     // You can add your drawing code here!
 }
 
@@ -151,6 +153,7 @@ void MainComponent::reloadPatch (double sampleRate)
     
     if (pd) {
         pd->computeAudio(false);
+        isPdComputingAudio = false;
         pd->closePatch(patch);
     }
     
@@ -161,7 +164,7 @@ void MainComponent::reloadPatch (double sampleRate)
     pdInBuffer.calloc (pd->blockSize() * numChannels);
     pdOutBuffer.calloc (pd->blockSize() * numChannels);
     
-
+    
     if (!patchfile.exists()) {
         if (patchfile.getFullPathName().toStdString() != "") {
             status = "File does not exist";
@@ -178,14 +181,19 @@ void MainComponent::reloadPatch (double sampleRate)
     patch = pd->openPatch (patchfile.getFileName().toStdString(), patchfile.getParentDirectory().getFullPathName().toStdString());
     
     if (patch.isValid()) {
-        pd->computeAudio (true);
+        
         if(!patchLoadError) {
             status = "Patch loaded successfully";
+            pd->computeAudio (true);
+            isPdComputingAudio = true;
         }
+
         patchLoadError = false;
     } else {
         status = "Selected patch is not valid";
+        patchLoadError = true;
     }
+
 }
 
 void MainComponent::setPatchFile(File file)

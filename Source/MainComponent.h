@@ -39,6 +39,7 @@ public:
     File getPatchFile();
     String status = "Select a pure data patch file...";
     bool patchLoadError = false;
+    bool isPdComputingAudio = false;
     
 private:
     //==============================================================================
